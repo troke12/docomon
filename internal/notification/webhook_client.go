@@ -19,13 +19,10 @@ func NewWebhookClient(googleChatURL, discordURL string) *WebhookClient {
 	}
 }
 
-func (wc *WebhookClient) SendWebhook(message string) error {
-	message = strings.ReplaceAll(message, "\n", " ")
-	formattedMessage := escapeSpecialChars(message)
-	payload := []byte(fmt.Sprintf(`{"content": "%s"}`, formattedMessage))
+func (wc *WebhookClient) SendWebhook(webhookURL, payload string) error {
 	client := http.DefaultClient
 
-	resp, err := client.Post(wc.discordURL, "application/json", bytes.NewBuffer(payload))
+	resp, err := client.Post(webhookURL, "application/json", bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err
 	}
@@ -37,6 +34,7 @@ func (wc *WebhookClient) SendWebhook(message string) error {
 
 	return nil
 }
+
 
 func (wc *WebhookClient) GetDiscordWebhookURL() string {
 	return wc.discordURL

@@ -7,7 +7,7 @@ import (
 
 // WebhookService defines the methods for sending webhooks.
 type WebhookService interface {
-	SendWebhook(message string) error
+	SendWebhook(webhookURL, message string) error
 	GetDiscordWebhookURL() string
 	GetGoogleChatWebhookURL() string
 }

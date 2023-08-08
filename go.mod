@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/joho/godotenv v1.5.1
 )
 
 require (

@@ -12,16 +12,22 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/troke12/docomon/internal/container"
 	"github.com/troke12/docomon/internal/notification"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Add an .env
+	err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Error loading .env file:", err)
+    }
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatal("Error creating Docker client:", err)
 	}
 
 	containerService := container.NewContainerService(dockerClient) // Create the container service
-
 	webhookClient := setupWebhookClient()
 
 	notificationService := notification.NewNotificationService(containerService, webhookClient)
@@ -38,7 +44,7 @@ func main() {
 
 	for {
 		displayTimestamp()
-		currentContainers, err := containerService.ListContainers(ctx, types.ContainerListOptions{})
+		currentContainers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
 		if err != nil {
 			log.Println("Error listing containers:", err)
 			continue

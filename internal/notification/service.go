@@ -9,17 +9,15 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/troke12/docomon/internal/container"
 	"github.com/docker/go-connections/nat"
+	"github.com/troke12/docomon/internal/container"
 )
 
-// NotificationService implements the NotificationService interface.
 type NotificationServiceImpl struct {
 	containerService container.ContainerService
 	webhookService   WebhookService
 }
 
-// NewNotificationService creates a new NotificationService instance.
 func NewNotificationService(containerService container.ContainerService, webhookService WebhookService) NotificationService {
 	return &NotificationServiceImpl{
 		containerService: containerService,
@@ -27,10 +25,10 @@ func NewNotificationService(containerService container.ContainerService, webhook
 	}
 }
 
-// CompareContainersAndNotify compares containers and sends notifications.
 func (ns *NotificationServiceImpl) CompareContainersAndNotify(initialContainers, currentContainers []types.Container) error {
 	initialContainerMap := make(map[string]struct{})
 	currentContainerMap := make(map[string]struct{})
+	processedContainers := make(map[string]bool)
 
 	for _, c := range initialContainers {
 		initialContainerMap[c.ID] = struct{}{}
@@ -40,56 +38,77 @@ func (ns *NotificationServiceImpl) CompareContainersAndNotify(initialContainers,
 		currentContainerMap[c.ID] = struct{}{}
 	}
 
-	// Check for new and removed containers
 	for _, c := range currentContainers {
-		if _, exists := initialContainerMap[c.ID]; !exists {
-			// New container detected, send notifications to both Discord and Google Chat
-			containerInfo, err := ns.containerService.InspectContainer(context.Background(), c.ID)
-			if err != nil {
-				log.Println("Error inspecting container:", err)
-				continue
+		if processedContainers[c.ID] {
+			// Skip containers that have already been processed
+			continue
+		}
+
+		containerInfo, err := ns.containerService.InspectContainer(context.Background(), c.ID)
+		if err != nil {
+			log.Println("Error inspecting container:", err)
+			continue
+		}
+
+		portMappings := getContainerPorts(c.ID, containerInfo.HostConfig.PortBindings)
+		message := formatContainerMessage(c.ID[:12], c.Names[0], c.Image, portMappings)
+
+		if _, exists := initialContainerMap[c.ID]; exists {
+			currentContainerMap[c.ID] = struct{}{} // Mark container as present
+		} else {
+			// New container detected
+			message = "New container started: " + message
+
+			discordWebhookURL := ns.webhookService.GetDiscordWebhookURL()
+			if discordWebhookURL != "" {
+				if err := ns.sendDiscordWebhook(message, discordWebhookURL); err != nil {
+					log.Println("Error sending Discord webhook:", err)
+				}
 			}
 
-			portMappings := getContainerPorts(c.ID, containerInfo.HostConfig.PortBindings)
-			message := formatContainerMessage(c.ID[:12], c.Names[0], c.Image, portMappings)
-			ns.sendWebhooks("New container started:\n" + message)
+			googleChatWebhookURL := ns.webhookService.GetGoogleChatWebhookURL()
+			if googleChatWebhookURL != "" {
+				if err := ns.sendGoogleChatWebhook(message, googleChatWebhookURL); err != nil {
+					log.Println("Error sending Google Chat webhook:", err)
+				}
+			}
 		}
-	}
 
-	for _, c := range initialContainers {
 		if _, exists := currentContainerMap[c.ID]; !exists {
-			// Container removed, send notifications to both Discord and Google Chat
-			containerInfo, err := ns.containerService.InspectContainer(context.Background(), c.ID)
-			if err != nil {
-				log.Println("Error inspecting container:", err)
-				continue
+			// Container removed
+			message = "Removed container: " + message
+
+			discordWebhookURL := ns.webhookService.GetDiscordWebhookURL()
+			if discordWebhookURL != "" {
+				if err := ns.sendDiscordWebhook(message, discordWebhookURL); err != nil {
+					log.Println("Error sending Discord webhook:", err)
+				}
 			}
 
-			portMappings := getContainerPorts(c.ID, containerInfo.HostConfig.PortBindings)
-			message := formatContainerMessage(c.ID[:12], c.Names[0], c.Image, portMappings)
-			ns.sendWebhooks("Removed container:\n" + message)
+			googleChatWebhookURL := ns.webhookService.GetGoogleChatWebhookURL()
+			if googleChatWebhookURL != "" {
+				if err := ns.sendGoogleChatWebhook(message, googleChatWebhookURL); err != nil {
+					log.Println("Error sending Google Chat webhook:", err)
+				}
+			}
 		}
+
+		// Mark container as processed
+		processedContainers[c.ID] = true
 	}
 
 	return nil
 }
 
-func (ns *NotificationServiceImpl) sendWebhooks(message string) {
-	go func() {
-		if ns.webhookService.GetDiscordWebhookURL() != "" {
-			err := ns.webhookService.SendWebhook(message)
-			if err != nil {
-				log.Println("Error sending Discord webhook:", err)
-			}
-		}
 
-		if ns.webhookService.GetGoogleChatWebhookURL() != "" {
-			err := ns.webhookService.SendWebhook(message)
-			if err != nil {
-				log.Println("Error sending Google Chat webhook:", err)
-			}
-		}
-	}()
+func (ns *NotificationServiceImpl) sendDiscordWebhook(message, webhookURL string) error {
+	log.Printf("Sending Discord webhook:\nURL: %s\nMessage: %s\n", webhookURL, createDiscordPayload(message))
+	return ns.webhookService.SendWebhook(webhookURL, createDiscordPayload(message))
+}
+
+func (ns *NotificationServiceImpl) sendGoogleChatWebhook(message, webhookURL string) error {
+	log.Printf("Sending Google Chat webhook:\nURL: %s\nMessage: %s\n", webhookURL, createGooglePayload(message)) // Debug log webhook
+	return ns.webhookService.SendWebhook(webhookURL, createGooglePayload(message))
 }
 
 func getContainerPorts(containerID string, portBindings map[nat.Port][]nat.PortBinding) []string {
@@ -108,6 +127,14 @@ func getContainerPorts(containerID string, portBindings map[nat.Port][]nat.PortB
 func formatContainerMessage(id string, name string, image string, portMappings []string) string {
 	hostname, _ := os.Hostname() // Retrieve the hostname of the machine
 
-	message := fmt.Sprintf("ID: %s\nName: %s\nImage: %s\nPorts: %s\nHost: %s\n", id, escapeSpecialChars(name), image, strings.Join(portMappings, ", "), hostname)
+	message := fmt.Sprintf("ID: %s, Name: %s, Image: %s, Ports: %s, Host: %s", id, escapeSpecialChars(name), image, strings.Join(portMappings, ", "), hostname)
 	return message
+}
+
+func createDiscordPayload(message string) string {
+	return fmt.Sprintf(`{"content": "%s"}`, escapeSpecialChars(message))
+}
+
+func createGooglePayload(message string) string {
+	return fmt.Sprintf(`{"text": "%s"}`, escapeSpecialChars(message))
 }
