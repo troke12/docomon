@@ -74,8 +74,21 @@ func (ns *NotificationServiceImpl) CompareContainersAndNotify(initialContainers,
 			}
 		}
 
-		if _, exists := currentContainerMap[c.ID]; !exists {
+		// Mark container as processed
+		processedContainers[c.ID] = true
+	}
+
+	for _, v := range initialContainers {
+		if _, exists := currentContainerMap[v.ID]; !exists {
 			// Container removed
+			containerInfo, err := ns.containerService.InspectContainer(context.Background(), v.ID)
+			if err != nil {
+				log.Println("Error inspecting container:", err)
+				continue
+			}
+
+			portMappings := getContainerPorts(v.ID, containerInfo.HostConfig.PortBindings)
+			message := formatContainerMessage(v.ID[:12], v.Names[0], v.Image, portMappings)
 			message = "Removed container: " + message
 
 			discordWebhookURL := ns.webhookService.GetDiscordWebhookURL()
@@ -92,9 +105,6 @@ func (ns *NotificationServiceImpl) CompareContainersAndNotify(initialContainers,
 				}
 			}
 		}
-
-		// Mark container as processed
-		processedContainers[c.ID] = true
 	}
 
 	return nil
