@@ -28,7 +28,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.token_secret }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
@@ -38,7 +38,7 @@ jobs:
       - name: Upload Linux binary
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.token_secret }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./docomon-linux-amd64
@@ -48,7 +48,7 @@ jobs:
       - name: Upload Windows binary
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.token_secret }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./docomon-win-amd64.exe
@@ -58,7 +58,7 @@ jobs:
       - name: Upload macOS binary
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.token_secret }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./docomon-darwin-amd64
