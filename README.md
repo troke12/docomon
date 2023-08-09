@@ -14,10 +14,19 @@ Get started with container monitoring and receive timely notifications for your 
 
 ## Setup
 
-- Clone repository and compile
-- Put in on `/user/local/bin`
-- `chmod +x /usr/local/bin/docomon`
-- Create systemd service
+This setup was currently on linux, in the future i will added docker setup.
+
+- Download the specific file on [release](https://github.com/troke12/docomon/releases/latest)
+- Copy the file `cp docomon-linux-amd64 /user/local/bin/docomon`
+- Set the permission `chmod +x /usr/local/bin/docomon`
+- Create `docomon.conf` on `/etc/docomon.conf`
+```
+cat <<EOF > "/etc/docomon.conf"
+GOOGLE_CHAT_WEBHOOK_URL="https://chat.googleapis.com"
+DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/"
+EOF
+```
+- Create systemd service named `docomon.service`
 ```
 cat <<EOF > "/etc/systemd/system/docomon.service"
 [Unit]
@@ -25,9 +34,7 @@ Description=docomon Service
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/docomon
-Environment=DISCORD_WEBHOOK_URL=ADD_YOUR_WEBHOOK_URL
-Environment=GOOGLE_CHAT_WEBHOOK_URL=ADD_YOUR_WEBHOOK_URL
+ExecStart=/usr/local/bin/docomon --env-file=/etc/docomon.conf
 
 [Install]
 WantedBy=multi-user.target
