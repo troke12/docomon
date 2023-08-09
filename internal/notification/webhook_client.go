@@ -2,7 +2,7 @@ package notification
 
 import (
 	"bytes"
-	"fmt"
+	//"fmt"
 	"net/http"
 	"strings"
 )
@@ -28,9 +28,11 @@ func (wc *WebhookClient) SendWebhook(webhookURL, payload string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("unexpected response from webhook: %s", resp.Status)
-	}
+
+	// this is needed when debugging the webhook
+	// if resp.StatusCode != http.StatusNoContent {
+	// 	return fmt.Errorf("unexpected response from webhook: %s", resp.Status)
+	// }
 
 	return nil
 }

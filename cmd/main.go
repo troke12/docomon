@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"flag"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -16,10 +17,16 @@ import (
 )
 
 func main() {
-	// Add an .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
+	// Define command-line flags
+	envFile := flag.String("env-file", "", "Path to .env file")
+	flag.Parse()
+
+	// Load .env file if specified
+	if *envFile != "" {
+		err := godotenv.Load(*envFile)
+		if err != nil {
+			log.Fatal("Error loading .env file:", err)
+		}
 	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
