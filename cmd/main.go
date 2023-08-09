@@ -10,17 +10,17 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/joho/godotenv"
 	"github.com/troke12/docomon/internal/container"
 	"github.com/troke12/docomon/internal/notification"
-	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Add an .env
 	err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file:", err)
-    }
+	if err != nil {
+		log.Fatal("Error loading .env file:", err)
+	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

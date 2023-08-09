@@ -112,12 +112,12 @@ func (ns *NotificationServiceImpl) CompareContainersAndNotify(initialContainers,
 
 
 func (ns *NotificationServiceImpl) sendDiscordWebhook(message, webhookURL string) error {
-	log.Printf("Sending Discord webhook:\nURL: %s\nMessage: %s\n", webhookURL, createDiscordPayload(message))
+	//log.Printf("Sending Discord webhook:\nURL: %s\nMessage: %s\n", webhookURL, createDiscordPayload(message))
 	return ns.webhookService.SendWebhook(webhookURL, createDiscordPayload(message))
 }
 
 func (ns *NotificationServiceImpl) sendGoogleChatWebhook(message, webhookURL string) error {
-	log.Printf("Sending Google Chat webhook:\nURL: %s\nMessage: %s\n", webhookURL, createGooglePayload(message)) // Debug log webhook
+	//log.Printf("Sending Google Chat webhook:\nURL: %s\nMessage: %s\n", webhookURL, createGooglePayload(message)) // Debug log webhook
 	return ns.webhookService.SendWebhook(webhookURL, createGooglePayload(message))
 }
 
