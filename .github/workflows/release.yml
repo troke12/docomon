@@ -20,7 +20,7 @@ jobs:
 
       - name: Build binaries
         run: |
-          GOOS=linux GOARCH=amd64 go build -o docomon-linux-amd64 cmd/main.go
+          GOOS=linux GOARCH=amd64 go build -ldflags "-linkmode external -extldflags -static" -o docomon-linux-amd64 cmd/main.go
           GOOS=windows GOARCH=amd64 go build -o docomon-win-amd64.exe cmd/main.go
           GOOS=darwin GOARCH=amd64 go build -o docomon-darwin-amd64 cmd/main.go
 
