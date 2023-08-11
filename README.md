@@ -12,9 +12,27 @@ The application is built using Go and leverages the Docker API for container man
 
 Get started with container monitoring and receive timely notifications for your Docker environment using this Docker Container Monitoring application.
 
-## Setup
+## Environment
+```
+SERVER_NAME=troke-server
+GOOGLE_CHAT_WEBHOOK_URL=your_google_chat_webhook_url
+DISCORD_WEBHOOK_URL=your_discord_webhook_url
+```
 
-This setup was currently on linux, in the future i will added docker setup.
+Define the environment just what you want
+
+## Using docker
+
+- Run this command
+```
+docker run --restart always -v /var/run/docker.sock:/var/run/docker.sock --env-file .env ---name docomon troke12/docomon:latest
+```
+- Make sure you have .env file created and point the path on `--env-file /path/to/your/env`
+- Make sure you have to change the `/var/run/docker.sock` to the right path of docker sock
+
+## Manual setup
+
+This setup was currently on linux
 
 - Download the specific file on [release](https://github.com/troke12/docomon/releases/latest)
 - Copy the file `cp docomon-linux-amd64 /user/local/bin/docomon`
@@ -22,6 +40,7 @@ This setup was currently on linux, in the future i will added docker setup.
 - Create `docomon.conf` on `/etc/docomon.conf`
 ```
 cat <<EOF > "/etc/docomon.conf"
+SERVER_NAME="server-name"
 GOOGLE_CHAT_WEBHOOK_URL="https://chat.googleapis.com"
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/"
 EOF

@@ -135,9 +135,12 @@ func getContainerPorts(containerID string, portBindings map[nat.Port][]nat.PortB
 }
 
 func formatContainerMessage(id string, name string, image string, portMappings []string) string {
-	hostname, _ := os.Hostname() // Retrieve the hostname of the machine
+	serverName := os.Getenv("SERVER_NAME")
+	if serverName == "" {
+		log.Println("SERVER_NAME environment variable not set")
+	}
 
-	message := fmt.Sprintf("ID: %s, Name: %s, Image: %s, Ports: %s, Host: %s", id, escapeSpecialChars(name), image, strings.Join(portMappings, ", "), hostname)
+	message := fmt.Sprintf("ID: %s, Name: %s, Image: %s, Ports: %s, Server: %s", id, escapeSpecialChars(name), image, strings.Join(portMappings, ", "), serverName)
 	return message
 }
 
